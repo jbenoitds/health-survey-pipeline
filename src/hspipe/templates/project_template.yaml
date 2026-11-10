@@ -1,0 +1,112 @@
+# =============================================================================
+# health-survey-pipeline – project configuration
+# Copy this file next to your data, edit it, then run:   hsp run config.yaml
+# Paths are relative to this file. Anything you leave out uses the default.
+# =============================================================================
+
+project:
+  name: "My survey project"
+  output_dir: output            # cleaned data, report and logs go here
+
+input:
+  data: data/raw_export.csv     # .csv .tsv .xlsx .sav .dta .parquet
+  data_dictionary: data/data_dictionary.csv   # REDCap dictionary or simple codebook (optional)
+  id_column: record_id
+  event_column: redcap_event_name   # longitudinal REDCap only; delete otherwise
+  drop_columns: []                  # columns to discard immediately
+
+# Timepoint suffixes. Anywhere below, "{t}" expands to each of these.
+timepoints: [t1, t2]
+
+missing:
+  # Strings treated as plain missing (in addition to empty cells)
+  codes: ["", "NA", "N/A", "na", ".", "-", "NULL", "missing", "#N/A"]
+  # Codes with a meaning – removed from analysis but counted separately
+  labelled_codes:
+    -99: Refused
+    -88: Don't know
+  # Codes that only mean "missing" for specific variables (e.g. a real 99 elsewhere)
+  variable_codes:
+    income: {99: Prefer not to answer}
+
+longitudinal:
+  reshape: true                 # one row per participant, suffixing time-varying columns
+  event_map:
+    baseline_arm_1: t1
+    followup_arm_1: t2
+  time_invariant: auto          # columns collected at one event only keep their plain name
+
+deidentify:
+  enabled: true
+  use_dictionary_identifiers: true   # drop fields marked "Identifier? = y"
+  drop: []                           # extra columns to drop
+  keep: []                           # override: never drop these
+  derive_age:
+    - {dob: dob, reference: consent_date, name: age_years}   # DOB is then dropped
+  drop_free_text: false              # drop all notes / unvalidated text fields
+  hash_id:
+    enabled: false                   # salted SHA-256 pseudonyms for record IDs
+    salt_env: HSP_SALT               # read the salt from this environment variable
+
+validation:
+  use_dictionary: true
+  check_branching: true          # skip-logic aware missingness + "answered but hidden"
+  check_required: true
+  check_duplicates: true
+  duplicates: flag               # flag | keep_first | keep_most_complete
+  on_invalid: set_missing        # set_missing | flag
+  rules:
+    # - {variable: age_years, range: [18, 50], message: "Outside eligibility age"}
+    # - {variable: "sleep_hours_{t}", outliers: 3}          # |z| > 3 -> warning
+    # - {check: "survey_date_t2 >= consent_date", message: "Follow-up before consent"}
+    # - {check: "[smoker] = '0' or [cigs_per_day] <> ''", severity: warning}
+
+# Recoding (SPSS RECODE equivalent). Use {t} for every timepoint, {var} for the source name.
+recode: []
+  # - variables: [item1, item2]
+  #   reverse: {min: 1, max: 5}
+  #   into: "{var}_r"
+  # - variable: education
+  #   map: {1: 1, 2: 1, 3: 2, 4: 3, 5: 3}
+  #   into: education_3cat
+  #   labels: {1: Secondary or less, 2: College, 3: University}
+  # - variable: bmi
+  #   bins: [0, 18.5, 25, 30, .inf]
+  #   labels: [Underweight, Normal, Overweight, Obese]
+  #   into: bmi_cat
+
+# Derived variables (SPSS COMPUTE equivalent)
+derive: []
+  # - {name: bmi, expr: "weight_kg / (height_cm / 100) ** 2", round: 1, label: "Body mass index"}
+  # - {name: days_to_followup, type: datediff, start: survey_date_t1, end: survey_date_t2, unit: days}
+  # - {name: n_conditions, type: count_checked, prefix: conditions}
+
+# Scale scoring. Built-in instruments: phq9, phq2, gad7, pss10, epds, who5, k10
+# or define your own with items / item_range / reverse / method / min_valid / cutoffs.
+scales: []
+  # - name: "phq9_{t}"
+  #   instrument: phq9
+  #   items: "phq9_{i}_{t}"        # {i} = 1..n_items
+  # - name: my_scale
+  #   items: [q1, q2, q3, q4]
+  #   item_range: [1, 5]
+  #   reverse: [2, 4]               # item positions (1-based) or column names
+  #   method: mean                  # sum | mean
+  #   min_valid: 0.75               # fraction or count of answered items needed
+  #   prorate: false
+  #   subscales: {a: [1, 2], b: [3, 4]}
+  #   cutoffs: [[0, Low], [3, High]]
+
+describe:
+  variables: auto                # or an explicit list
+  group_by: null                 # e.g. group -> Table 1 by arm with tests
+  tests: true
+  compare_timepoints: true       # paired change for every {t} scale / derived variable
+  max_categories: 15
+
+outputs:
+  cleaned_csv: true
+  excel: true
+  html: true
+  spss: false                    # needs: pip install "health-survey-pipeline[spss]"
+  codebook: true

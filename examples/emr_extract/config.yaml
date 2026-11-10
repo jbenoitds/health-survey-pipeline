@@ -1,0 +1,38 @@
+# Example: a flat EMR / clinical-registry extract with a simple codebook (no REDCap).
+# All values are synthetic.
+project:
+  name: "EMR extract example (synthetic)"
+  output_dir: output
+
+input:
+  data: emr_extract.csv
+  data_dictionary: codebook.csv       # generic codebook: variable,label,type,choices,min,max,identifier
+  id_column: patient_id
+
+missing:
+  labelled_codes: {-999: Not measured}
+  codes: ["", ".", "NA", "pending"]
+
+deidentify:
+  drop: []                            # mrn is dropped because the codebook marks it identifier=y
+
+validation:
+  rules:
+    - {check: "sbp > dbp", message: "Systolic must exceed diastolic", severity: error}
+
+derive:
+  - {name: age_at_visit, expr: "visit_date.dt.year - birth_year", label: "Age at visit (years)"}
+  - {name: map, expr: "dbp + (sbp - dbp) / 3", round: 1, label: "Mean arterial pressure (mmHg)"}
+
+recode:
+  - variable: sbp
+    bins: [0, 120, 130, 140, .inf]
+    labels: ["<120", "120-129", "130-139", ">=140"]
+    into: sbp_cat
+    label: "Systolic BP category"
+
+describe:
+  group_by: diabetes_dx
+
+outputs:
+  spss: false

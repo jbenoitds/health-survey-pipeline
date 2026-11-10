@@ -1,0 +1,12 @@
+variable,label,type,choices,min,max,identifier,required
+patient_id,Patient study ID,text,,,,,
+mrn,Medical record number,text,,,,y,
+visit_date,Clinic visit date,date,,2024-01-01,today,,
+birth_year,Year of birth,integer,,1900,2010,,
+sex,Sex,categorical,F=Female|M=Male,,,,
+sbp,Systolic blood pressure (mmHg),integer,,60,260,,
+dbp,Diastolic blood pressure (mmHg),integer,,30,160,,
+hba1c,HbA1c (%),number,,3,20,,
+ldl,LDL cholesterol (mmol/L),number,,0,15,,
+smoking_status,Smoking status,categorical,1=Never|2=Former|3=Current,,,,
+diabetes_dx,Diabetes diagnosis,categorical,0=No|1=Yes,,,,

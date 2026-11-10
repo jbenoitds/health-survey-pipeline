@@ -1,0 +1,29 @@
+# --- participant data must never be committed ---
+data/
+output/
+**/output/
+**/restricted/
+hsp_demo/
+*.sav
+*.zsav
+*.dta
+*.xlsx
+*.xls
+*.parquet
+# CSVs are ignored except the synthetic example files
+*.csv
+!examples/**/*.csv
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+.DS_Store
