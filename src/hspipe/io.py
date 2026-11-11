@@ -41,7 +41,7 @@ def read_table(path: str | Path, fmt: str = "auto", sheet: Optional[str] = None,
                 last_err = err
         raise last_err  # type: ignore[misc]
     if ext in {".xlsx", ".xls"}:
-        # explicit engine: pandas < 1.2 otherwise tries xlrd for .xlsx (.xls still needs xlrd)
+        # .xlsx through openpyxl; old .xls files still need xlrd
         engine = "openpyxl" if ext == ".xlsx" else None
         return pd.read_excel(path, sheet_name=sheet or 0, dtype=str, keep_default_na=False, engine=engine)
     if ext in {".sav", ".zsav"}:

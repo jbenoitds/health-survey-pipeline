@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 (2026-11-11)
+
+Updated to current library versions.
+
+* Minimum versions are now Python 3.10, pandas 2.1, numpy 1.25, scipy 1.11, PyYAML 6.0, openpyxl 3.1,
+  pyreadstat 1.2 and pytest 7.4. Support for the 2020 releases added in 0.1.1 is dropped.
+* Removed `hspipe/_compat.py`: the code now uses `DataFrame.map`, `pd.to_datetime(format="mixed")` and
+  the `.pvalue` attribute of scipy results directly.
+* Packaging metadata moved from `setup.cfg` + `setup.py` to `pyproject.toml`.
+* Removed `ci/constraints-2020.txt`. CI now runs on Ubuntu and Windows with Python 3.10, 3.12 and 3.13.
+
 ## 0.1.1 (2026-11-06)
 
 Runs on the 2020 toolchain.

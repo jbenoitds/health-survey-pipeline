@@ -14,7 +14,6 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from ._compat import frame_map
 
 DD_HEADER = ["Variable / Field Name", "Form Name", "Section Header", "Field Type", "Field Label",
              "Choices, Calculations, OR Slider Labels", "Field Note", "Text Validation Type OR Show Slider Number",
@@ -139,7 +138,7 @@ def make_demo(out_dir: str | Path, n: int = 240, seed: int = 7) -> dict:
     cols = [c for c in df.columns if c not in {"enrollment_complete", "wellbeing_survey_complete"}]
     df = df[cols[:2] + [c for c in cols[2:]] + ["enrollment_complete", "wellbeing_survey_complete"]]
     df = df.astype(object).where(df.notna(), "")
-    df = frame_map(df, lambda v: (f"{v:g}" if isinstance(v, float) else str(v)))
+    df = df.map(lambda v: (f"{v:g}" if isinstance(v, float) else str(v)))
     df = _plant_problems(df, rng)
     df = df.sort_values(["record_id", "redcap_event_name"], kind="stable").reset_index(drop=True)
     # one fully blank line, as happens when exports are edited in Excel

@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-from ._compat import pvalue
 from .config import expand_list
 from .context import REASON_BLANK, REASON_FORM, REASON_SKIPPED, Context
 
@@ -143,10 +142,10 @@ def table_one(ctx: Context, sel: Dict[str, List[str]], group: Optional[str]) -> 
             samples.append(xs)
         if do_tests and all(len(s) >= 2 for s in samples):
             if len(samples) == 2:
-                p = pvalue(stats.ttest_ind(samples[0], samples[1], equal_var=False))
+                p = stats.ttest_ind(samples[0], samples[1], equal_var=False).pvalue
                 row["test"] = "Welch t-test"
             else:
-                p = pvalue(stats.f_oneway(*samples))
+                p = stats.f_oneway(*samples).pvalue
                 row["test"] = "One-way ANOVA"
             row["p"] = _fmt_p(p)
         row["n (non-missing)"] = str(int(x.notna().sum()))
@@ -164,10 +163,10 @@ def table_one(ctx: Context, sel: Dict[str, List[str]], group: Optional[str]) -> 
             if ct.shape[0] >= 2 and ct.shape[1] >= 2:
                 expected = stats.contingency.expected_freq(ct.values)
                 if ct.shape == (2, 2) and (expected < 5).any():
-                    p = pvalue(stats.fisher_exact(ct.values))
+                    p = stats.fisher_exact(ct.values).pvalue
                     head["test"] = "Fisher exact"
                 else:
-                    p = pvalue(stats.chi2_contingency(ct.values, correction=False))
+                    p = stats.chi2_contingency(ct.values, correction=False).pvalue
                     head["test"] = "Chi-square" + (" (some expected <5)" if (expected < 5).any() else "")
                 head["p"] = _fmt_p(p)
         rows.append(head)
@@ -222,12 +221,12 @@ def timepoint_comparisons(ctx: Context) -> pd.DataFrame:
                 d = pair[b] - pair[a]
                 t = stats.ttest_rel(pair[b], pair[a])
                 try:
-                    w = pvalue(stats.wilcoxon(pair[b], pair[a])) if (d != 0).any() else np.nan
+                    w = stats.wilcoxon(pair[b], pair[a]).pvalue if (d != 0).any() else np.nan
                 except ValueError:
                     w = np.nan
                 row.update({f"mean_{first}": pair[a].mean(), f"mean_{later}": pair[b].mean(),
                             "mean_change": d.mean(), "sd_change": d.std(ddof=1), "t": t.statistic,
-                            "p_paired_t": pvalue(t), "p_wilcoxon": w,
+                            "p_paired_t": t.pvalue, "p_wilcoxon": w,
                             "cohens_dz": d.mean() / d.std(ddof=1) if d.std(ddof=1) > 0 else np.nan})
             rows.append(row)
     return pd.DataFrame(rows)

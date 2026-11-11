@@ -8,7 +8,6 @@ from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from ._compat import parse_dates
 from .branching import BranchingError, compile_logic
 from .config import expand_list
 from .context import REASON_BLANK, REASON_FORM, REASON_INVALID, REASON_SKIPPED, Context
@@ -28,6 +27,27 @@ COMPLETE_LABELS = {0.0: "Incomplete", 1.0: "Unverified", 2.0: "Complete"}
 def to_number(s: pd.Series) -> pd.Series:
     cleaned = s.astype(str).str.replace(",", ".", regex=False).where(s != "", np.nan)
     return pd.to_numeric(cleaned, errors="coerce")
+
+
+_ISO_FORMATS = ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M:%S")
+
+
+def parse_dates(s: pd.Series, dayfirst: bool = False) -> pd.Series:
+    """Parse text dates. Exact ISO formats first (REDCap raw exports), then a lenient
+    per-value parse for anything else (e.g. 15/03/2024 after a round trip through Excel)."""
+    s = s.where(s.notna() & (s.astype(str) != ""), np.nan)
+    out = pd.Series(pd.NaT, index=s.index, dtype="datetime64[ns]")
+    rest = s.notna()
+    for fmt in _ISO_FORMATS:
+        if not rest.any():
+            break
+        parsed = pd.to_datetime(s[rest], errors="coerce", format=fmt)
+        out.loc[parsed.index[parsed.notna()]] = parsed[parsed.notna()]
+        rest = s.notna() & out.isna()
+    if rest.any():
+        alt = pd.to_datetime(s[rest], errors="coerce", dayfirst=dayfirst, format="mixed")
+        out.loc[alt.index] = alt
+    return out
 
 
 def to_date(s: pd.Series, validation: str = "") -> pd.Series:

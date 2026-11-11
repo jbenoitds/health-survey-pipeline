@@ -1,6 +1,49 @@
 [build-system]
-requires = ["setuptools>=44", "wheel"]
+requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "health-survey-pipeline"
+dynamic = ["version"]
+description = "Config-driven cleaning, validation, scoring and descriptive reporting for REDCap / survey / EMR exports."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Jean-Benoit Deville-Stoetzel" }]
+keywords = ["redcap", "survey", "data-cleaning", "epidemiology", "psychometrics", "emr", "spss"]
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+dependencies = [
+    "pandas>=2.1",
+    "numpy>=1.25",
+    "scipy>=1.11",
+    "pyyaml>=6.0",
+    "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+spss = ["pyreadstat>=1.2"]
+dev = ["pytest>=7.4", "pyreadstat>=1.2"]
+
+[project.scripts]
+hsp = "hspipe.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "hspipe.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"hspipe.templates" = ["*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
